@@ -8,31 +8,37 @@ import java.io.IOException;
  */
 public class EndTime implements Runnable {
 
-    private Session[] sessions;
+  private Session[] sessions;
 
-    private String flag;
+  private String flag;
 
-    public EndTime(Session[] sessions, String flag) {
-        this.sessions = sessions;
-        this.flag = flag;
-    }
+  public EndTime(Session[] sessions, String flag) {
+    this.sessions = sessions;
+    this.flag = flag;
+  }
 
-    public void run() {
-        for (int i = 3; i > 0; i--) {
-            try {
-                for (int j = 0; j < sessions.length; j++) {
-                    if (sessions[j] != null) {
-                        try {
-                            sessions[j].getBasicRemote().sendText("e:" + flag + ":" + j + ":" + i);
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                    }
-                }
-                Thread.sleep(2000);
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
+  public void run() {
+    try {
+      for (int j = 0; j < sessions.length; j++) {
+        if (sessions[j] != null) {
+          try {
+            sessions[j].getBasicRemote().sendText("j:" + flag + ":" + j);
+          } catch (IOException e) {
+            e.printStackTrace();
+          }
         }
+      }
+      Thread.sleep(5000);
+      for (Session session : sessions) {
+        try {
+          session.getBasicRemote().sendText("s:");
+        } catch (IOException e) {
+          e.printStackTrace();
+        }
+      }
+
+    } catch (InterruptedException e) {
+      e.printStackTrace();
     }
+  }
 }
