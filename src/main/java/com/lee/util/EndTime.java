@@ -18,7 +18,6 @@ public class EndTime implements Runnable {
   }
 
   public void run() {
-    try {
       for (int j = 0; j < sessions.length; j++) {
         if (sessions[j] != null) {
           try {
@@ -28,17 +27,14 @@ public class EndTime implements Runnable {
           }
         }
       }
-      Thread.sleep(5000);
-      for (Session session : sessions) {
-        try {
-          session.getBasicRemote().sendText("s:");
-        } catch (IOException e) {
-          e.printStackTrace();
-        }
-      }
+//      Thread.sleep(5000);
+//      for (Session session : sessions) {
+//        try {
+//          session.getBasicRemote().sendText("s:");
+//        } catch (IOException e) {
+//          e.printStackTrace();
+//        }
+//      }
 
-    } catch (InterruptedException e) {
-      e.printStackTrace();
-    }
   }
 }
