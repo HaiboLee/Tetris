@@ -86,8 +86,14 @@ var playState = function (game) {
             }
         }
 
+        window.onbeforeunload = function () {//关闭窗口
+            leave();
+            console.log('关闭窗口');
+        }
+
+
         webSocket.onmessage = function (event) {
-            console.log(event.data);
+            //console.log(event.data);
             var arr = event.data.split(":");
 
             if (arr[0] == "m") {//移动
@@ -107,16 +113,19 @@ var playState = function (game) {
                 }
             } else if (arr[0] == 'k') {//销毁方块
                 players[parseInt(arr[2])].destroy();
-            } else if (arr[0] == 'g') {
+            } else if (arr[0] == 'g') {//得分
                 var gg = arr[2].split(',');
                 drawMap.removeLine(gg);
                 drawMap.downTile(gg);
+            } else if(arr[0] == 'l'){//有玩家离开
+                //players[parseInt(arr[2])];
+                removeByValue(players,players[parseInt(arr[2])]);
+                players[parseInt(arr[2])].destroy();
             } else if (arr[0] == 'j') {
                 flag = arr[1];
                 num = arr[2];
+                console.log(flag + ":" + num);
                 sendMsg("n:" + flag + ":" + num + ":" + Math.floor(Math.random() * 4));
-                mybox = players[num];
-                console.log(mybox);
                 setInterval(function () {
                     if (chick.chickMove(players[num], 40)) {
                         //players[num].y += 10;
@@ -138,6 +147,20 @@ var playState = function (game) {
 
     function sendMsg(msg) {
         webSocket.send(msg);
+    }
+
+    function leave(){
+        webSocket.send('l:' + flag + ':' + num);
+        webSocket.close();
+    }
+
+    function removeByValue(array, val) {
+        for(var i=0; i<array.length; i++) {
+            if(array[i] == val) {
+                array.splice(i, 1);
+                break;
+            }
+        }
     }
 
 }

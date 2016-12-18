@@ -15,6 +15,7 @@ import javax.websocket.OnOpen;
 import javax.websocket.Session;
 import javax.websocket.server.ServerEndpoint;
 
+import com.lee.one.Lock;
 import com.lee.util.EndTime;
 
 /**
@@ -40,7 +41,6 @@ public class WebService {
 
 	private static List<Session> waitRoom = new ArrayList<Session>();
 
-	private static Session[] waitsessions = new Session[2];
 
 	/* 与某个客户端的连接会话，需要通过它来给客户端发送数据 */
 	private Session session;
@@ -50,22 +50,21 @@ public class WebService {
 	}
 
 	@OnOpen
-	public void onOpen(Session session) {
+	public synchronized void onOpen(Session session) {
 		/* 当有玩家加入,先将玩家加入等候室,等候室满5人后再加入创建房间开始 */
 		this.session = session;
 		addOnlineCount();
-		waitRoom.add(session);
-		if (waitRoom.size() == waitsessions.length) {
-			for (int i = 0; i < waitsessions.length; i++) {
-				waitsessions[i] = waitRoom.get(i);
-			}
-			String flag = makeRoom(waitsessions);
-			flags.add(flag);
-			waitRoom.clear();
-			// sendMessage(room.get(flag),"s");
-			//      Thread t = new Thread(new EndTime(room.get(flag), flag));
-			//      t.start();
-			synchronized (this) {
+		System.out.println(session.getId());
+		waitRoom.add(this.session);
+			if (waitRoom.size() == 3) {
+				Session[] waitsessions = new Session[3];
+				for (int i = 0; i < waitsessions.length; i++) {
+					waitsessions[i] = waitRoom.get(i);
+				}
+				String flag = makeRoom(waitsessions);
+				System.out.println(flag);
+				//flags.add(flag);
+				waitRoom.clear();
 				for (int j = 0; j < room.get(flag).length; j++) {
 					if (room.get(flag)[j] != null) {
 						try {
@@ -76,7 +75,6 @@ public class WebService {
 					}
 				}
 			}
-		}
 		System.out
 		.println("有新玩家加入,当前人数为:" + getOnlineCount() + "当前房间数为:" + room.size());
 
@@ -89,16 +87,28 @@ public class WebService {
 	}
 
 	@OnMessage
-	public void onMessage(String message, Session session) {
-		//System.out.println("接受到消息:" + message);
+	public synchronized void onMessage(String message, Session session) {
 		String[] ss = message.split(":");
-		//    String s0 = ss[0];
-		//    if(s0.equals("n")){
 		sendMessage(room.get(ss[1]), message);
-		//    }
-		//    else if(s0.equals("m")){
-		//    	sendMessage(room.get(ss[1]), message);
-		//    }
+		//sendMessageToSession(session, message);
+		//System.out.println(message);
+		if(ss[0].equals("l")){
+			System.out.println("用户离开："+message);
+			Session[] players = room.get(ss[1]);
+			players[Integer.parseInt(ss[2])] = null;
+			int a = 0;
+			for(int i = 0;i<players.length;i++){
+				if(players[i] != null){
+					break;
+				}
+				a = i;
+			}
+			if(a == players.length - 1){
+				room.remove(ss[1]);
+				flags.remove(ss[1]);
+			}
+			System.out.println("当前房间数为："+room.size());
+		}
 	}
 
 	@OnError
@@ -118,12 +128,6 @@ public class WebService {
 	public static synchronized void subOnlineCount() {
 		WebService.onlineCount--;
 	}
-
-	/*
-	 * private boolean haveNoRoom() { if (flags.size() == 0) { return true; } for
-	 * (String string : flags) { Session[] ss = room.get(string); for (Session
-	 * session : ss) { if (session == null) { return false; } } } return true; }
-	 */
 
 	private String makeRoom(Session[] sessions) {
 		String flag = createFlag();
@@ -172,8 +176,7 @@ public class WebService {
 	 *          void
 	 * @since JDK 1.7
 	 */
-	private void sendMessage(Session[] sessions, String message) {
-		synchronized (this) {
+	private synchronized void sendMessage(Session[] sessions, String message) {
 			for (Session session : sessions) {
 				if (session != null) {
 					try {
@@ -183,6 +186,5 @@ public class WebService {
 					}
 				}
 			}
-		}
 	}
 }
